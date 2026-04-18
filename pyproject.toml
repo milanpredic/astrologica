@@ -1,0 +1,122 @@
+[project]
+name = "astrologica"
+version = "0.1.0"
+description = "Astrology calculations library — traditional Hellenistic focus, Swiss Ephemeris backed"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Milan Predic", email = "milan.predic@gmail.com" }]
+keywords = [
+    "astrology",
+    "hellenistic",
+    "horary",
+    "ephemeris",
+    "swiss-ephemeris",
+    "natal-chart",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pyswisseph>=2.10.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/milanpredic/astrologica"
+Repository = "https://github.com/milanpredic/astrologica"
+Issues = "https://github.com/milanpredic/astrologica/issues"
+
+[project.optional-dependencies]
+# Geocoding + timezone + elevation helpers.
+# Install with: pip install 'astrologica[geo]'
+geo = [
+    "geonamescache>=1.6.0",
+    "timezonefinder>=6.5.0",
+    "SRTM.py>=0.3.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/astrologica"]
+# The bundled Swiss Ephemeris star catalog (src/astrologica/_data/sefstars.txt)
+# ships with the wheel automatically as a subdirectory of the package.
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "mypy>=1.10",
+    "black>=24",
+    "isort>=5.13",
+    "flake8>=7",
+    "import-linter>=2.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["swisseph", "srtm", "geonamescache", "timezonefinder"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "pure: runs without any ephemeris",
+    "fake_ephemeris: uses the in-memory FakeEphemeris",
+    "infrastructure: hits real pyswisseph",
+]
+
+[tool.importlinter]
+root_packages = ["astrologica"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain never imports infrastructure"
+type = "forbidden"
+source_modules = ["astrologica._internal.domain"]
+forbidden_modules = ["astrologica._internal.infrastructure"]
+
+[[tool.importlinter.contracts]]
+name = "Ports never import infrastructure or compute"
+type = "forbidden"
+source_modules = ["astrologica._internal.ports"]
+forbidden_modules = ["astrologica._internal.infrastructure"]
+
+[[tool.importlinter.contracts]]
+name = "Only infrastructure may import swisseph"
+type = "forbidden"
+source_modules = [
+    "astrologica._internal.domain",
+    "astrologica._internal.ports",
+]
+forbidden_modules = ["swisseph"]
