@@ -20,5 +20,3 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
-.claude/
-code-resources/
