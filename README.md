@@ -28,10 +28,20 @@ data = ChartData(
 
 chart = compute_natal_chart(data)
 
-print(chart.planets[Planet.SUN].sign)           # Sign.TAURUS
-print(chart.planets[Planet.SUN].degree_in_sign) # 24.72
-print(chart.planets[Planet.SUN].is_retrograde)  # False
-print(chart.is_diurnal)                         # True
+sun = chart.planets[Planet.SUN]
+print(sun.sign)                # Sign.TAURUS
+print(sun.degree_in_sign)      # 24.72
+print(sun.is_retrograde)       # False
+print(sun.dignities)           # frozenset() — Sun has no essential dignity here
+print(sun.house)               # 9
+print(sun.solar_state)         # SolarState.FREE
+print(sun.orientality)         # Orientality.NEUTRAL (Sun & Moon are NEUTRAL)
+print(sun.face_ruler)          # Planet.SATURN  (third decan of Taurus)
+print(sun.term_ruler)          # Planet.SATURN  (Egyptian: 27–30° Taurus)
+print(sun.triplicity_rulers)   # TriplicityRulers(day=VENUS, night=MOON, participating=MARS)
+print(sun.monomoira_ruler)     # Planet.SATURN  (per-degree ruler at 25° Taurus)
+print(chart.is_diurnal)        # True
+print(chart.almuten_figuris.winner)  # Planet.VENUS — chart's overall ruler
 ```
 
 ### Don't know the timezone? Use the `[geo]` extra.
@@ -54,6 +64,16 @@ print("Moon VOC:", horary.moon_is_void_of_course)
 Every feature is a top-level import from `astrologica`. The natal `Chart`
 already contains planet positions, houses, aspects, lots, and the prenatal
 syzygy — the cookbook below shows everything else you can layer on.
+
+**Time-lord techniques.** Five complementary systems for activating the
+chart over time: `compute_zodiacal_releasing` (Valens, releasing from
+Spirit or Fortune), `compute_firdaria` (Persian fixed-period, two nocturnal
+traditions), `compute_decennials` (Valens 126-year Mu cycle),
+`compute_term_distribution` (Naibod-directed Ascendant through term
+boundaries), and `compute_annual_profection` (Ptolemaic 12-house cycle).
+Pair any of them with `compute_almuten_figuris` for the chart's overall
+ruler, or `compute_saturn_return` and `compute_secondary_progressions`
+for life-stage markers.
 
 ### Aspects
 
@@ -158,6 +178,210 @@ d = compute_dignities(
     is_diurnal=True,
     terms_system=TermsSystem.EGYPTIAN,  # or PTOLEMAIC / CHALDEAN / …
 )
+```
+
+Each `PlanetPosition` also exposes the **rulers of the segment** it falls
+in — handy without an extra lookup:
+
+```python
+sun.face_ruler          # Chaldean-decan ruler (10° segment)
+sun.term_ruler          # Egyptian term ruler (call term_of() for other systems)
+sun.triplicity_rulers   # TriplicityRulers(day, night, participating)
+sun.monomoira_ruler     # per-degree ruler at this longitude
+
+# Sect-aware triplicity ruler:
+tri_ruler = sun.triplicity_rulers.day if chart.is_diurnal else sun.triplicity_rulers.night
+```
+
+These describe the zodiacal segment, not the body — the face ruler at
+0° Aries is Mars whether the position is occupied by the Sun, Saturn, or
+a node. They are also surfaced in `Chart.to_dict()` for serialisation.
+
+### Numeric dignity score (Lilly weights)
+
+```python
+from astrologica import LILLY_WEIGHTS, Planet, dignity_score
+
+# Mars at 0° Aries: domicile (+5) + face (+1) = 6.
+score = dignity_score(Planet.MARS, 0.0, is_diurnal=True, weights=LILLY_WEIGHTS)
+```
+
+Pass your own `EssentialWeights(domicile=..., exaltation=..., ...)` to use a different scheme.
+
+### Almuten Figuris
+
+```python
+from astrologica import compute_almuten_figuris
+
+result = compute_almuten_figuris(chart)
+print(result.winner)            # the winning planet, or None on dead heat
+print(result.runners_up)        # tied/close runners after tie-break trace
+print(result.totals)            # full per-planet score breakdown
+for b in result.breakdown:
+    print(b.point.label, b.per_planet)
+```
+
+The result also exposes split scoring — `essential_totals` (dignity
+points), `accidental_totals` (house-quality weights), and
+`modifier_totals` (state bonuses/penalties) — plus `tie_break_trace`
+explaining how the winner was selected. For an arbitrary point set, use
+`compute_almuten(chart, points=[AlmutenPoint("MyLot", lon)], ...)`.
+
+**Custom weights and modifiers.** Pass `essential_weights`,
+`accidental_weights`, or `modifiers` to override defaults:
+
+```python
+from astrologica import (
+    AlmutenModifiers, EssentialWeights, HouseQuality,
+    compute_almuten_figuris,
+)
+
+result = compute_almuten_figuris(
+    chart,
+    essential_weights=EssentialWeights(
+        domicile=5, exaltation=4, triplicity=3, term=2, face=1,
+    ),
+    accidental_weights={
+        HouseQuality.ANGULAR: 4,
+        HouseQuality.SUCCEDENT: 2,
+        HouseQuality.CADENT: 0,
+    },
+    modifiers=AlmutenModifiers(
+        combust=-5, under_beams=-4, cazimi=+5, retrograde=-5,
+        aversion_to_asc=-2, oriental_bonus_superior=+2,
+        occidental_bonus_inferior=+2, fast_or_direct_bonus=+1,
+        angular_house=+5, succedent_house=+3, cadent_house=+0,
+        malefic_in_6_or_12=-4,
+    ),
+)
+```
+
+### Firdaria
+
+```python
+from astrologica import FirdariaTradition, compute_firdaria
+
+periods = compute_firdaria(chart, tradition=FirdariaTradition.AL_BIRUNI)
+for p in periods:
+    print(f"{p.ruler.name}: ages {p.start_age:.1f}–{p.end_age:.1f}")
+    for s in p.sub_periods:
+        print(f"  {s.ruler.name}: {s.start_age:.2f}–{s.end_age:.2f}")
+```
+
+Each major period is split into seven sub-periods (1/7 of the major span)
+cycling through the remaining six planets plus the major ruler itself.
+Node periods (`TRUE_NODE`, `SOUTH_TRUE_NODE`) have no sub-periods. The
+nocturnal sequence differs by tradition — `AL_BIRUNI` places the nodes at
+the end (most common); `BONATTI` places them mid-sequence after Mars. The
+diurnal sequence is identical in both.
+
+### Decennials (Valens)
+
+```python
+from astrologica import compute_decennials
+
+# Diurnal: Sun → Venus → Mercury → Moon → Saturn → Jupiter → Mars (Chaldean order from sect light)
+# Nocturnal: Moon → Saturn → Jupiter → Mars → Sun → Venus → Mercury
+# Total cycle: 126 years (the "Mu" cycle).
+for p in compute_decennials(chart, max_age_years=82.0):
+    print(f"{p.ruler.name}: ages {p.start_age}–{p.end_age}")
+```
+
+### Annual profection (Ptolemaic 12-house cycle)
+
+```python
+from astrologica import compute_annual_profection
+
+p = compute_annual_profection(chart, age_years=29)
+print(p.profected_house, p.profected_sign.name, p.lord_of_year.name)
+# year 0 → 1st house; the cycle repeats every 12 years.
+```
+
+### Term distribution (Naibod-directed Ascendant)
+
+```python
+from astrologica import compute_term_distribution
+
+# Walk the Ascendant forward through term boundaries at the Naibod rate
+# (≈0.986°/year). Each period's ruler is the Lord of that age-span.
+for p in compute_term_distribution(chart, max_age_years=82.0):
+    print(f"{p.ruler.name} ({p.sign.name}): ages {p.start_age:.1f}–{p.end_age:.1f}")
+```
+
+### Saturn return
+
+```python
+from astrologica import compute_saturn_return
+
+first  = compute_saturn_return(chart, n=1)   # ≈ age 29.5
+second = compute_saturn_return(chart, n=2)   # ≈ age 59
+```
+
+### Monomoira (per-degree ruler)
+
+Each integer degree of the zodiac has a planetary ruler — the
+*monomoira* — taken from a 360-row table. Useful as fine-grain dignity
+data and as a tie-break in Almuten computations.
+
+```python
+from astrologica import MONOMOIRAI, monomoira_of
+
+ruler = monomoira_of(0.0)        # → Planet.MARS (0° Aries)
+ruler = monomoira_of(24.72)      # ruler of the 25th degree of Aries
+# MONOMOIRAI is the full 360-tuple if you want to walk the table directly.
+```
+
+### Faces (decans), terms (bounds), triplicities
+
+```python
+from astrologica import (
+    FACES, TRIPLICITY_BY_ELEMENT, face_of, term_boundaries, triplicity_of,
+)
+from astrologica.terms import TERMS_EGYPTIAN, TermsSystem
+```
+
+### Solar state, orientality, house quality, aversion
+
+```python
+from astrologica import (
+    Angle, Planet, SOLAR_STATE_THRESHOLDS, SolarStateThresholds,
+    planet_solar_state, planet_orientality,
+    house_quality, is_in_aversion_to,
+)
+
+state = planet_solar_state(chart.planets[Planet.VENUS], chart.planets[Planet.SUN])
+# → SolarState.CAZIMI / COMBUST / UNDER_BEAMS / FREE
+ori   = planet_orientality(Planet.JUPITER, chart.planets)
+# → Orientality.ORIENTAL / OCCIDENTAL (or None for luminaries)
+hq    = house_quality(7)              # → HouseQuality.ANGULAR
+av    = is_in_aversion_to(Planet.MARS, Angle.ASCENDANT, chart)
+
+# Override thresholds (defaults: cazimi 17', combust 8.5°, under-beams 17°)
+state = planet_solar_state(
+    chart.planets[Planet.VENUS], chart.planets[Planet.SUN],
+    thresholds=SolarStateThresholds(
+        cazimi_arcminutes=17.0, combust_degrees=8.5, under_beams_degrees=17.0,
+    ),
+)
+```
+
+### Aspects to angles
+
+```python
+from astrologica import Angle, compute_aspects
+
+aspects = compute_aspects(
+    chart.planets,
+    include_angles=(Angle.ASCENDANT, Angle.MIDHEAVEN),
+    chart=chart,
+)
+```
+
+### Optional nodes for traditional charts
+
+```python
+chart = compute_natal_chart(data, include_nodes=True)
+# now chart.planets contains TRUE_NODE and SOUTH_TRUE_NODE
 ```
 
 ### Lots (Hellenistic) — classical seven + custom DSL
@@ -342,8 +566,48 @@ compute_natal_chart(data, tradition=ChartTradition.MODERN)
 
 ### Terms systems
 
-Supplied to `compute_dignities(...)`: `EGYPTIAN` (default),
-`PTOLEMAIC`, `CHALDEAN`, `DOROTHEAN`, `ASTROLOGICAL_ASSOCIATION`.
+Threaded through the chart via `ChartConfig.terms_system` (see below):
+`EGYPTIAN` (default), `PTOLEMAIC`, `CHALDEAN`, `DOROTHEAN`,
+`ASTROLOGICAL_ASSOCIATION`. The chosen system drives every dignity-aware
+computation in the chart — per-planet `dignities`, `term_ruler`, and
+`almuten_figuris`.
+
+### ChartConfig — editorial knobs
+
+`compute_natal_chart` accepts a `config: ChartConfig` kwarg bundling every
+editorial choice the chart makes. All defaults are Hellenistic-traditional,
+so you can ignore it; override sub-configs to suit your scheme.
+
+```python
+from astrologica import (
+    AlmutenConfig, AlmutenModifiers, ChartConfig, HouseQuality,
+    TermsSystem, compute_natal_chart,
+)
+
+chart = compute_natal_chart(
+    data,
+    config=ChartConfig(
+        terms_system=TermsSystem.PTOLEMAIC,
+        almuten=AlmutenConfig(
+            accidental_weights={
+                HouseQuality.ANGULAR: 5,
+                HouseQuality.SUCCEDENT: 3,
+                HouseQuality.CADENT: 0,
+            },
+            modifiers=AlmutenModifiers(
+                combust=-5, cazimi=+5, retrograde=-5,
+                angular_house=+5, oriental_bonus_superior=+2,
+            ),
+            sect_aware=True,
+        ),
+    ),
+)
+chart.almuten_figuris.winner    # eagerly computed using the config
+chart.config.terms_system       # echoed back for traceability
+```
+
+Adding new sub-configs (aspect orbs, solar-state thresholds, rulership
+scheme) is purely additive — existing call sites won't break.
 
 ### Ephemeris data
 
@@ -390,15 +654,17 @@ json.dumps(chart.to_dict(), indent=2)
 | Field | Type | What it is |
 |---|---|---|
 | `data` | `ChartData` | the originating input (datetime, place, ayanamsa, frame) |
+| `config` | `ChartConfig` | editorial knobs (terms system, almuten weights) |
 | `house_system` | `HouseSystem` | the system used for cusps |
 | `tradition` | `ChartTradition` | `TRADITIONAL` or `MODERN` body set |
 | `ascendant`, `midheaven` | `Longitude` | angles |
 | `is_diurnal` | `bool` | sect — Sun above horizon? |
 | `syzygy` | `Syzygy` | prenatal lunation (kind / when / longitude / sign) |
-| `planets` | `Mapping[Planet, PlanetPosition]` | body positions + speed + dignities + retrograde |
+| `planets` | `Mapping[Planet, PlanetPosition]` | per-body: position, speed, dignities, house, solar state, orientality, ruler properties |
 | `houses` | `tuple[HouseCusp, ...]` | cusp longitudes |
-| `aspects` | `tuple[Aspect, ...]` | Ptolemaic + semisextile + quincunx |
+| `aspects` | `tuple[Aspect, ...]` | Ptolemaic + semisextile + quincunx, including aspects to Asc/MC |
 | `lots` | `Mapping[Lot, LotPosition]` | classical seven lots |
+| `almuten_figuris` | `AlmutenResult` | chart's overall ruler, eagerly computed from `config.almuten` |
 
 ## Architecture
 

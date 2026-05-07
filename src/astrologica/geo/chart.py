@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from astrologica.chart import Chart, ChartTradition, compute_natal_chart
+from astrologica.chart import Chart, ChartConfig, ChartTradition, compute_natal_chart
 from astrologica.chart_data import ChartData
 from astrologica.geo._coerce import DatetimeInput, resolve_when_and_place
 from astrologica.house import HouseSystem
+
+DEFAULT_CHART_CONFIG: ChartConfig = ChartConfig()
 
 
 def build_natal_chart(
@@ -13,6 +15,8 @@ def build_natal_chart(
     city: str,
     house_system: HouseSystem = HouseSystem.WHOLE_SIGN,
     tradition: ChartTradition = ChartTradition.TRADITIONAL,
+    *,
+    config: ChartConfig = DEFAULT_CHART_CONFIG,
 ) -> Chart:
     """Compute a natal chart from a datetime-like value + a city name.
 
@@ -29,9 +33,14 @@ def build_natal_chart(
     lat/lon. `tradition` selects the body set (`TRADITIONAL` — classical 7,
     `MODERN` — + Uranus/Neptune/Pluto + lunar nodes). Default is TRADITIONAL.
 
+    `config` (ChartConfig) carries editorial knobs (terms system, almuten
+    weights). See `astrologica.ChartConfig`.
+
     Raises `ValueError` on unparseable datetime, `LookupError` if no city matches,
     `TypeError` for other input shapes.
     """
     parsed, place = resolve_when_and_place(when, city)
     data = ChartData(datetime=parsed, place=place)
-    return compute_natal_chart(data, house_system=house_system, tradition=tradition)
+    return compute_natal_chart(
+        data, house_system=house_system, tradition=tradition, config=config
+    )

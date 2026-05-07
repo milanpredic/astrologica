@@ -18,6 +18,7 @@ end (or 0°) and runs up to (but not including) `end`.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum
 
 from astrologica._internal.domain.planet.planet import Planet
@@ -265,3 +266,47 @@ def term_of(
         if degree_in_sign < end:
             return ruler
     return table[sign][-1][1]
+
+
+@dataclass(frozen=True, slots=True)
+class TermBoundary:
+    """A term ruler-span as an absolute-longitude range.
+
+    `start_longitude` inclusive, `end_longitude` exclusive (the last entry's
+    `end_longitude` is exactly 360.0).
+    """
+
+    start_longitude: float
+    end_longitude: float
+    sign: Sign
+    ruler: Planet
+
+
+def term_boundaries(
+    system: TermsSystem = TermsSystem.EGYPTIAN,
+) -> tuple[TermBoundary, ...]:
+    """Enumerate every term ruler-span across the zodiac for `system`.
+
+    Returns up to 60 entries (12 signs × 5 sections). The Chaldean table pads
+    a duplicate fifth Saturn span which is dropped here, so Chaldean returns 48.
+    Spans are sorted ascending by `start_longitude`; the last entry's
+    `end_longitude` is exactly 360.0.
+    """
+    table = _TABLES[system]
+    out: list[TermBoundary] = []
+    for sign in Sign:
+        sign_base = float(int(sign)) * 30.0
+        prev_end_in_sign = 0.0
+        for end_in_sign, ruler in table[sign]:
+            if end_in_sign == prev_end_in_sign:
+                continue  # padded empty span (Chaldean's fifth row)
+            out.append(
+                TermBoundary(
+                    start_longitude=sign_base + prev_end_in_sign,
+                    end_longitude=sign_base + end_in_sign,
+                    sign=sign,
+                    ruler=ruler,
+                )
+            )
+            prev_end_in_sign = end_in_sign
+    return tuple(out)

@@ -1,9 +1,34 @@
 """astrologica — traditional astrology calculations, clean interface."""
 
+from astrologica.almuten import (
+    DEFAULT_ACCIDENTAL_WEIGHTS,
+    DEFAULT_ALMUTEN_MODIFIERS,
+    AlmutenModifiers,
+    AlmutenPoint,
+    AlmutenPointBreakdown,
+    AlmutenResult,
+    compute_almuten,
+    compute_almuten_figuris,
+)
 from astrologica.angle import Degree, Latitude, Longitude, Orb
 from astrologica.antiscion import compute_antiscion, compute_contraantiscion
-from astrologica.aspect import Aspect, AspectKind, compute_aspects
-from astrologica.chart import Chart, ChartTradition, compute_natal_chart
+from astrologica.aspect import (
+    DEFAULT_ORBS,
+    LUMINARY_ORB_BONUS,
+    Angle,
+    Aspect,
+    AspectEndpoint,
+    AspectKind,
+    compute_aspects,
+    default_orb,
+    is_in_aversion_to,
+)
+from astrologica.chart import Chart, ChartConfig, ChartTradition, compute_natal_chart
+from astrologica._internal.domain.chart.config import (
+    DEFAULT_ALMUTEN_CONFIG,
+    DEFAULT_CHART_CONFIG,
+    AlmutenConfig,
+)
 from astrologica.chart_data import Ayanamsa, ChartData, ReferenceFrame
 from astrologica.custom_lot import (
     CardinalAngle,
@@ -20,21 +45,46 @@ from astrologica.custom_lot import (
     SyzygyPoint,
     compute_custom_lot,
 )
-from astrologica.dignity import Dignity, TermsSystem, compute_dignities
+from astrologica.decennials import DecennialPeriod, compute_decennials
+from astrologica.dignity import (
+    LILLY_WEIGHTS,
+    Dignity,
+    EssentialWeights,
+    TermsSystem,
+    compute_dignities,
+    dignity_score,
+)
 from astrologica.diurnal import compute_is_diurnal
 from astrologica.dodecatemorion import DodecatemorionVariant, compute_dodecatemorion
 from astrologica.ecliptic import EclipticPosition, Speed
 from astrologica.ephemeris import EphemerisPort, RawHouseCusps
+from astrologica.faces import FACES, face_of
 from astrologica.find_time import find_time
+from astrologica.firdaria import (
+    FirdariaPeriod,
+    FirdariaSubPeriod,
+    FirdariaTradition,
+    compute_firdaria,
+)
 from astrologica.fixed_stars import (
     FixedStar,
     FixedStarConjunction,
     compute_fixed_star_conjunctions,
 )
 from astrologica.horary import HoraryChart, compute_horary_chart
-from astrologica.house import House, HouseCusp, HouseSystem, compute_house_cusps
+from astrologica.house import (
+    House,
+    HouseCusp,
+    HouseQuality,
+    HouseSystem,
+    compute_house_cusps,
+    house_of,
+    house_quality,
+)
 from astrologica.lot import Lot, LotPosition, compute_lots
 from astrologica.midpoints import compute_midpoints
+from astrologica.monomoirai import MONOMOIRAI, monomoira_of
+from astrologica.orientality import Orientality, planet_orientality
 from astrologica.place import Place
 from astrologica.planet import Planet, PlanetPosition, compute_planet_positions
 from astrologica.planetary_hours import PlanetaryHour, compute_planetary_hours
@@ -48,27 +98,66 @@ from astrologica.primary_directions import (
     compute_primary_directions,
     compute_speculum,
 )
-from astrologica.returns import compute_lunar_return, compute_solar_return
+from astrologica.profection import ProfectionPeriod, compute_annual_profection
+from astrologica.returns import compute_lunar_return, compute_saturn_return, compute_solar_return
 from astrologica.rise_set import RiseSetTimes, compute_rise_set
 from astrologica.rising_times import compute_rising_times
 from astrologica.secondary_progressions import compute_secondary_progressions
 from astrologica.sign import Sign
+from astrologica.solar_state import (
+    SOLAR_STATE_THRESHOLDS,
+    SolarState,
+    SolarStateThresholds,
+    planet_solar_state,
+)
 from astrologica.swisseph import SwissEphemerisAdapter
 from astrologica.syzygy import Syzygy, SyzygyKind, compute_prenatal_syzygy
+from astrologica.term_distribution import TermPeriod, compute_term_distribution
+from astrologica.terms import (
+    TERMS_ASTROLOGICAL_ASSOCIATION,
+    TERMS_CHALDEAN,
+    TERMS_DOROTHEAN,
+    TERMS_EGYPTIAN,
+    TERMS_PTOLEMAIC,
+    TermBoundary,
+    TermSection,
+    TermsTable,
+    term_boundaries,
+    term_of,
+)
 from astrologica.transits import TransitAspect, TransitEvent, compute_transits, find_transits
+from astrologica.triplicities import (
+    TRIPLICITY_BY_ELEMENT,
+    TriplicityRulers,
+    triplicity_of,
+)
 from astrologica.zodiacal_releasing import ReleasingPeriod, compute_zodiacal_releasing
 
 __all__ = [
+    "AlmutenConfig",
+    "AlmutenModifiers",
+    "AlmutenPoint",
+    "AlmutenPointBreakdown",
+    "AlmutenResult",
+    "Angle",
     "ArcKey",
     "Aspect",
+    "AspectEndpoint",
     "AspectKind",
     "Ayanamsa",
     "CardinalAngle",
     "CardinalAngleName",
     "Chart",
-    "CustomLot",
+    "ChartConfig",
     "ChartData",
     "ChartTradition",
+    "CustomLot",
+    "DEFAULT_ACCIDENTAL_WEIGHTS",
+    "DEFAULT_ALMUTEN_CONFIG",
+    "DEFAULT_ALMUTEN_MODIFIERS",
+    "DEFAULT_CHART_CONFIG",
+    "DEFAULT_ORBS",
+    "DecennialPeriod",
     "Degree",
     "Dignity",
     "DirectionApproach",
@@ -76,13 +165,21 @@ __all__ = [
     "DodecatemorionVariant",
     "EclipticPosition",
     "EphemerisPort",
+    "EssentialWeights",
+    "FACES",
+    "FirdariaPeriod",
+    "FirdariaSubPeriod",
+    "FirdariaTradition",
     "FixedStar",
     "FixedStarConjunction",
     "HoraryChart",
     "House",
     "HouseCusp",
     "HouseCuspRef",
+    "HouseQuality",
     "HouseSystem",
+    "LILLY_WEIGHTS",
+    "LUMINARY_ORB_BONUS",
     "Latitude",
     "LordKind",
     "LordOf",
@@ -91,36 +188,58 @@ __all__ = [
     "LotComponent",
     "LotFormula",
     "LotPosition",
+    "MONOMOIRAI",
     "Orb",
+    "Orientality",
     "Place",
     "Planet",
     "PlanetPosition",
     "PlanetaryHour",
     "PrimaryDirection",
     "PriorLot",
+    "ProfectionPeriod",
     "RawHouseCusps",
     "ReferenceFrame",
     "ReleasingPeriod",
     "RiseSetTimes",
     "RulerOf",
     "RulerOfKind",
+    "SOLAR_STATE_THRESHOLDS",
     "Sign",
+    "SolarState",
+    "SolarStateThresholds",
     "Speculum",
     "Speed",
     "SwissEphemerisAdapter",
     "Syzygy",
     "SyzygyKind",
     "SyzygyPoint",
+    "TERMS_ASTROLOGICAL_ASSOCIATION",
+    "TERMS_CHALDEAN",
+    "TERMS_DOROTHEAN",
+    "TERMS_EGYPTIAN",
+    "TERMS_PTOLEMAIC",
+    "TRIPLICITY_BY_ELEMENT",
+    "TermBoundary",
+    "TermPeriod",
+    "TermSection",
     "TermsSystem",
+    "TermsTable",
     "TransitAspect",
     "TransitEvent",
+    "TriplicityRulers",
+    "compute_almuten",
+    "compute_almuten_figuris",
+    "compute_annual_profection",
     "compute_antiscion",
     "compute_all_specula",
     "compute_aspects",
     "compute_contraantiscion",
     "compute_custom_lot",
+    "compute_decennials",
     "compute_dignities",
     "compute_dodecatemorion",
+    "compute_firdaria",
     "compute_fixed_star_conjunctions",
     "compute_horary_chart",
     "compute_house_cusps",
@@ -135,11 +254,25 @@ __all__ = [
     "compute_prenatal_syzygy",
     "compute_rise_set",
     "compute_rising_times",
+    "compute_saturn_return",
     "compute_secondary_progressions",
     "compute_solar_return",
     "compute_speculum",
+    "compute_term_distribution",
     "compute_transits",
     "compute_zodiacal_releasing",
+    "default_orb",
+    "dignity_score",
+    "face_of",
     "find_time",
     "find_transits",
+    "house_of",
+    "house_quality",
+    "is_in_aversion_to",
+    "monomoira_of",
+    "planet_orientality",
+    "planet_solar_state",
+    "term_boundaries",
+    "term_of",
+    "triplicity_of",
 ]

@@ -11,12 +11,13 @@ from __future__ import annotations
 from astrologica._internal.domain.chart import Chart
 from astrologica._internal.domain.chart.chart_data import ChartData
 from astrologica._internal.domain.chart.compute import compute_natal_chart as _compute_natal_chart
+from astrologica._internal.domain.chart.config import DEFAULT_CHART_CONFIG, ChartConfig
 from astrologica._internal.domain.chart.tradition import ChartTradition
 from astrologica._internal.domain.house.system import HouseSystem
 from astrologica._internal.infrastructure.ephemeris.swiss import SwissEphemerisAdapter
 from astrologica._internal.ports.ephemeris import EphemerisPort
 
-__all__ = ["Chart", "ChartTradition", "compute_natal_chart"]
+__all__ = ["Chart", "ChartConfig", "ChartTradition", "compute_natal_chart"]
 
 
 def compute_natal_chart(
@@ -24,6 +25,9 @@ def compute_natal_chart(
     house_system: HouseSystem = HouseSystem.WHOLE_SIGN,
     ephemeris: EphemerisPort | None = None,
     tradition: ChartTradition = ChartTradition.TRADITIONAL,
+    *,
+    include_nodes: bool = False,
+    config: ChartConfig = DEFAULT_CHART_CONFIG,
 ) -> Chart:
     """Compute a natal chart for `data`.
 
@@ -31,9 +35,23 @@ def compute_natal_chart(
     - `ChartTradition.TRADITIONAL` (default): the 7 classical planets.
     - `ChartTradition.MODERN`: classical + Uranus, Neptune, Pluto + lunar nodes.
 
+    `include_nodes=True` adds True Node + South True Node even under TRADITIONAL.
+    Under MODERN this flag is a no-op (nodes are already included).
+
+    `config` (ChartConfig) carries editorial knobs — terms system and almuten
+    weights/modifiers. Defaults are Hellenistic-traditional; override via
+    ``ChartConfig(terms_system=..., almuten=AlmutenConfig(...))``.
+
     If `ephemeris` is None, a default `SwissEphemerisAdapter` is used — the most
     common path for library consumers. Inject a custom `EphemerisPort` for tests
     or alternate backends.
     """
     adapter = ephemeris if ephemeris is not None else SwissEphemerisAdapter()
-    return _compute_natal_chart(data, house_system, adapter, tradition=tradition)
+    return _compute_natal_chart(
+        data,
+        house_system,
+        adapter,
+        tradition=tradition,
+        include_nodes=include_nodes,
+        config=config,
+    )

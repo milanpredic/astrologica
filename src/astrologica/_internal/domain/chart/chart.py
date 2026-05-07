@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from astrologica._internal.domain.almuten.types import AlmutenResult
 from astrologica._internal.domain.aspect.aspect import Aspect
 from astrologica._internal.domain.chart.chart_data import ChartData
+from astrologica._internal.domain.chart.config import DEFAULT_CHART_CONFIG, ChartConfig
 from astrologica._internal.domain.chart.tradition import ChartTradition
 from astrologica._internal.domain.house.cusp import HouseCusp
 from astrologica._internal.domain.house.system import HouseSystem
@@ -38,6 +40,8 @@ class Chart:
     houses: tuple[HouseCusp, ...]
     aspects: tuple[Aspect, ...]
     lots: Mapping[Lot, LotPosition]
+    almuten_figuris: AlmutenResult
+    config: ChartConfig = field(default=DEFAULT_CHART_CONFIG)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serialisable representation of the chart."""
@@ -51,6 +55,7 @@ class Chart:
             },
             "house_system": self.house_system.name,
             "tradition": self.tradition.name,
+            "terms_system": self.config.terms_system.name,
             "ascendant": float(self.ascendant),
             "midheaven": float(self.midheaven),
             "is_diurnal": self.is_diurnal,
@@ -68,7 +73,18 @@ class Chart:
                     "sign": pp.sign.name,
                     "degree_in_sign": pp.degree_in_sign,
                     "is_retrograde": pp.is_retrograde,
+                    "house": pp.house,
                     "dignities": sorted(d.name for d in pp.dignities),
+                    "face_ruler": pp.face_ruler.name,
+                    "term_ruler": pp.term_ruler.name,
+                    "triplicity_rulers": {
+                        "day": pp.triplicity_rulers.day.name,
+                        "night": pp.triplicity_rulers.night.name,
+                        "participating": pp.triplicity_rulers.participating.name,
+                    },
+                    "monomoira_ruler": pp.monomoira_ruler.name,
+                    "solar_state": pp.solar_state.name if pp.solar_state else None,
+                    "orientality": pp.orientality.name if pp.orientality else None,
                 }
                 for p, pp in self.planets.items()
             },
@@ -99,5 +115,9 @@ class Chart:
                     "degree_in_sign": lp.degree_in_sign,
                 }
                 for lot, lp in self.lots.items()
+            },
+            "almuten_figuris": {
+                "winner": self.almuten_figuris.winner.name if self.almuten_figuris.winner else None,
+                "totals": {p.name: t for p, t in self.almuten_figuris.totals.items()},
             },
         }

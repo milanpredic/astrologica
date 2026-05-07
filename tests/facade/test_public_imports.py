@@ -65,6 +65,75 @@ class TestConceptFacades:
             compute_dodecatemorion,
         )
 
+    def test_faces(self) -> None:
+        from astrologica.faces import FACES, face_of  # noqa: F401
+
+    def test_terms(self) -> None:
+        from astrologica.terms import (  # noqa: F401
+            TERMS_EGYPTIAN,
+            TermBoundary,
+            term_boundaries,
+            term_of,
+        )
+
+    def test_triplicities(self) -> None:
+        from astrologica.triplicities import (  # noqa: F401
+            TRIPLICITY_BY_ELEMENT,
+            TriplicityRulers,
+            triplicity_of,
+        )
+
+    def test_monomoirai(self) -> None:
+        from astrologica.monomoirai import MONOMOIRAI, monomoira_of  # noqa: F401
+
+    def test_solar_state(self) -> None:
+        from astrologica.solar_state import (  # noqa: F401
+            SOLAR_STATE_THRESHOLDS,
+            SolarState,
+            SolarStateThresholds,
+            planet_solar_state,
+        )
+
+    def test_orientality(self) -> None:
+        from astrologica.orientality import Orientality, planet_orientality  # noqa: F401
+
+    def test_almuten(self) -> None:
+        from astrologica.almuten import (  # noqa: F401
+            DEFAULT_ALMUTEN_MODIFIERS,
+            AlmutenModifiers,
+            AlmutenPoint,
+            AlmutenResult,
+            compute_almuten,
+            compute_almuten_figuris,
+        )
+
+    def test_firdaria(self) -> None:
+        from astrologica.firdaria import (  # noqa: F401
+            FirdariaPeriod,
+            FirdariaTradition,
+            compute_firdaria,
+        )
+
+    def test_house_quality(self) -> None:
+        from astrologica.house import HouseQuality, house_quality  # noqa: F401
+
+    def test_dignity_score(self) -> None:
+        from astrologica.dignity import (  # noqa: F401
+            LILLY_WEIGHTS,
+            EssentialWeights,
+            dignity_score,
+        )
+
+    def test_aspect_extensions(self) -> None:
+        from astrologica.aspect import (  # noqa: F401
+            DEFAULT_ORBS,
+            LUMINARY_ORB_BONUS,
+            Angle,
+            AspectEndpoint,
+            default_orb,
+            is_in_aversion_to,
+        )
+
 
 class TestMeasureFacades:
     def test_place(self) -> None:
@@ -130,5 +199,34 @@ class TestOneStopFacade:
             "compute_natal_chart",
             "compute_planet_positions",
             "compute_prenatal_syzygy",
+            # Phase A 0.2.0 additions
+            "AlmutenModifiers",
+            "AlmutenPoint",
+            "AlmutenResult",
+            "Angle",
+            "DEFAULT_ALMUTEN_MODIFIERS",
+            "EssentialWeights",
+            "FACES",
+            "FirdariaPeriod",
+            "FirdariaTradition",
+            "HouseQuality",
+            "LILLY_WEIGHTS",
+            "MONOMOIRAI",
+            "Orientality",
+            "SolarState",
+            "TERMS_EGYPTIAN",
+            "TRIPLICITY_BY_ELEMENT",
+            "compute_almuten",
+            "compute_almuten_figuris",
+            "compute_firdaria",
+            "dignity_score",
+            "face_of",
+            "house_quality",
+            "is_in_aversion_to",
+            "monomoira_of",
+            "planet_orientality",
+            "planet_solar_state",
+            "term_boundaries",
+            "triplicity_of",
         ):
             assert hasattr(astrologica, name), f"astrologica.{name} is not re-exported"
