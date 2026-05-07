@@ -1,5 +1,10 @@
 """astrologica — traditional astrology calculations, clean interface."""
 
+from astrologica._internal.domain.chart.config import (
+    DEFAULT_ALMUTEN_CONFIG,
+    DEFAULT_CHART_CONFIG,
+    AlmutenConfig,
+)
 from astrologica.almuten import (
     DEFAULT_ACCIDENTAL_WEIGHTS,
     DEFAULT_ALMUTEN_MODIFIERS,
@@ -24,11 +29,6 @@ from astrologica.aspect import (
     is_in_aversion_to,
 )
 from astrologica.chart import Chart, ChartConfig, ChartTradition, compute_natal_chart
-from astrologica._internal.domain.chart.config import (
-    DEFAULT_ALMUTEN_CONFIG,
-    DEFAULT_CHART_CONFIG,
-    AlmutenConfig,
-)
 from astrologica.chart_data import Ayanamsa, ChartData, ReferenceFrame
 from astrologica.custom_lot import (
     CardinalAngle,

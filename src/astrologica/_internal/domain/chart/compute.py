@@ -106,9 +106,7 @@ def compute_natal_chart(
         for planet, pp in bare_planets.items()
     }
 
-    angle_anchors = SimpleNamespace(
-        ascendant=float(ascendant), midheaven=float(midheaven)
-    )
+    angle_anchors = SimpleNamespace(ascendant=float(ascendant), midheaven=float(midheaven))
     aspects = compute_aspects(
         planets,
         include_angles=(Angle.ASCENDANT, Angle.MIDHEAVEN),

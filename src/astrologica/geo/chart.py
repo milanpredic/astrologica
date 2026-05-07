@@ -41,6 +41,4 @@ def build_natal_chart(
     """
     parsed, place = resolve_when_and_place(when, city)
     data = ChartData(datetime=parsed, place=place)
-    return compute_natal_chart(
-        data, house_system=house_system, tradition=tradition, config=config
-    )
+    return compute_natal_chart(data, house_system=house_system, tradition=tradition, config=config)

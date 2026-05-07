@@ -28,7 +28,9 @@ class TestWholeSignPlacement:
         assert house_of(195.0, cusps) == 7
 
     def test_position_just_below_first_cusp_is_twelfth(self) -> None:
-        cusps = _whole_sign_cusps(asc_lon=15.0)  # 1st cusp at 0° Aries; 12th cusp at 0° Pisces (330°)
+        cusps = _whole_sign_cusps(
+            asc_lon=15.0
+        )  # 1st cusp at 0° Aries; 12th cusp at 0° Pisces (330°)
         # 359.99° (Pisces 29°59') is in the 12th.
         assert house_of(359.99, cusps) == 12
 
