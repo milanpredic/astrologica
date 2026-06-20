@@ -45,7 +45,11 @@ from astrologica.custom_lot import (
     SyzygyPoint,
     compute_custom_lot,
 )
-from astrologica.decennials import DecennialPeriod, compute_decennials
+from astrologica.decennials import (
+    DecennialPeriod,
+    DecennialSubPeriod,
+    compute_decennials,
+)
 from astrologica.dignity import (
     LILLY_WEIGHTS,
     Dignity,
@@ -158,6 +162,7 @@ __all__ = [
     "DEFAULT_CHART_CONFIG",
     "DEFAULT_ORBS",
     "DecennialPeriod",
+    "DecennialSubPeriod",
     "Degree",
     "Dignity",
     "DirectionApproach",

@@ -1,15 +1,16 @@
-"""Decennials (Valens) — sect-conditional time-lord technique.
+"""Decennials (Valens decennia) — sect-conditional time-lord technique.
 
-Each of the seven classical planets rules a major period of years; the
-sequence starts with the sect light (Sun for diurnal, Moon for nocturnal)
-and proceeds in Chaldean order. Total cycle length is 126 years (the "Mu"
-cycle).
-
-Period lengths (per Valens):
-  Sun=19 / Venus=8 / Mercury=20 / Moon=25 / Saturn=27 / Jupiter=12 / Mars=15
+Each of the seven classical planets rules a uniform major period of
+**10 years 9 months** (10.75y; 129 months). The sequence starts with the
+sect light (Sun for diurnal, Moon for nocturnal) and proceeds in descending
+Chaldean order; one full cycle of 7 planets is 75y3m. Each major period
+subdivides into 7 sub-periods (~1y 6m 12d each).
 """
 
 from astrologica._internal.domain.decennials.compute import compute_decennials
-from astrologica._internal.domain.decennials.types import DecennialPeriod
+from astrologica._internal.domain.decennials.types import (
+    DecennialPeriod,
+    DecennialSubPeriod,
+)
 
-__all__ = ["DecennialPeriod", "compute_decennials"]
+__all__ = ["DecennialPeriod", "DecennialSubPeriod", "compute_decennials"]

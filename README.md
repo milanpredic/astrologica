@@ -68,7 +68,7 @@ syzygy — the cookbook below shows everything else you can layer on.
 **Time-lord techniques.** Five complementary systems for activating the
 chart over time: `compute_zodiacal_releasing` (Valens, releasing from
 Spirit or Fortune), `compute_firdaria` (Persian fixed-period, two nocturnal
-traditions), `compute_decennials` (Valens 126-year Mu cycle),
+traditions), `compute_decennials` (Valens decennia, 10y9m per planet),
 `compute_term_distribution` (Naibod-directed Ascendant through term
 boundaries), and `compute_annual_profection` (Ptolemaic 12-house cycle).
 Pair any of them with `compute_almuten_figuris` for the chart's overall
@@ -282,9 +282,12 @@ from astrologica import compute_decennials
 
 # Diurnal: Sun → Venus → Mercury → Moon → Saturn → Jupiter → Mars (Chaldean order from sect light)
 # Nocturnal: Moon → Saturn → Jupiter → Mars → Sun → Venus → Mercury
-# Total cycle: 126 years (the "Mu" cycle).
+# Each period is 10y9m (10.75y; 129 months); one full cycle of 7 = 75y3m.
+# Each major period carries 7 sub-periods (~1y 6m 12d each).
 for p in compute_decennials(chart, max_age_years=82.0):
     print(f"{p.ruler.name}: ages {p.start_age}–{p.end_age}")
+    for s in p.sub_periods:
+        print(f"  {s.ruler.name}: {s.start_age:.2f}–{s.end_age:.2f}")
 ```
 
 ### Annual profection (Ptolemaic 12-house cycle)

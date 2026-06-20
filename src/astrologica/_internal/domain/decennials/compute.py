@@ -1,40 +1,54 @@
-"""compute_decennials — Valens' sect-conditional time-lord sequence.
+"""compute_decennials — Valens decennia (10y9m per planet), sect-conditional.
 
-Day chart: starts at the Sun and proceeds in Chaldean order from there
-  → Sun (19) → Venus (8) → Mercury (20) → Moon (25) → Saturn (27) → Jupiter (12) → Mars (15).
+The decennia assign each classical planet a uniform major period of
+**10 years 9 months** (10.75y; 129 months):
 
-Night chart: starts at the Moon and proceeds in Chaldean order from there
-  → Moon (25) → Saturn (27) → Jupiter (12) → Mars (15) → Sun (19) → Venus (8) → Mercury (20).
+Day chart: starts at the Sun, descending Chaldean order
+  Sun -> Venus -> Mercury -> Moon -> Saturn -> Jupiter -> Mars
+Night chart: starts at the Moon, descending Chaldean order
+  Moon -> Saturn -> Jupiter -> Mars -> Sun -> Venus -> Mercury
 
-Total cycle = 126 years; cycle is repeated to cover `max_age_years`.
+One full cycle of 7 planets = 75y3m; the cycle repeats to cover
+`max_age_years`. Each major period subdivides into 7 sub-periods of
+10.75/7 ~ 1.536y (~1y 6m 12d), walking the same sequence forward from
+the major ruler.
 
-Reference: Valens; period lengths confirmed in the friend's spec feedback.
+Reference: Vettius Valens, *Anthology* (the distribution of the decennia);
+period length 129 months. (The earlier minor-years sequence — Sun 19,
+Venus 8, ... totalling 126y — was a different, mislabelled technique.)
 """
 
 from __future__ import annotations
 
-from astrologica._internal.domain.decennials.types import DecennialPeriod
+from astrologica._internal.domain.decennials.types import (
+    DAY_SEQUENCE,
+    DECENNIAL_PERIOD_YEARS,
+    NIGHT_SEQUENCE,
+    DecennialPeriod,
+    DecennialSubPeriod,
+)
 from astrologica._internal.domain.planet.planet import Planet
 
-_DAY_SEQUENCE: list[tuple[Planet, int]] = [
-    (Planet.SUN, 19),
-    (Planet.VENUS, 8),
-    (Planet.MERCURY, 20),
-    (Planet.MOON, 25),
-    (Planet.SATURN, 27),
-    (Planet.JUPITER, 12),
-    (Planet.MARS, 15),
-]
 
-_NIGHT_SEQUENCE: list[tuple[Planet, int]] = [
-    (Planet.MOON, 25),
-    (Planet.SATURN, 27),
-    (Planet.JUPITER, 12),
-    (Planet.MARS, 15),
-    (Planet.SUN, 19),
-    (Planet.VENUS, 8),
-    (Planet.MERCURY, 20),
-]
+def _build_sub_periods(
+    sequence: list[Planet],
+    period_index: int,
+    period_start: float,
+) -> tuple[DecennialSubPeriod, ...]:
+    """Build the 7 sub-periods within a decennia.
+
+    Each sub-period is 1/7 of the 10.75y major period; the cycle starts at
+    the major ruler and walks the sequence forward.
+    """
+    sub_length = DECENNIAL_PERIOD_YEARS / 7.0
+    n = len(sequence)
+    out: list[DecennialSubPeriod] = []
+    for i in range(7):
+        ruler = sequence[(period_index + i) % n]
+        start = period_start + i * sub_length
+        end = start + sub_length
+        out.append(DecennialSubPeriod(ruler=ruler, start_age=start, end_age=end))
+    return tuple(out)
 
 
 def compute_decennials(
@@ -42,22 +56,31 @@ def compute_decennials(
     *,
     max_age_years: float = 82.0,
 ) -> tuple[DecennialPeriod, ...]:
-    """Generate the decennial sequence for a chart, truncated at `max_age_years`.
+    """Generate the decennia sequence for a chart, truncated at `max_age_years`.
 
-    The cycle repeats indefinitely (period = 126 years) until accumulated age
-    reaches `max_age_years`.
+    Major periods are 10y9m each, emitted in sect-conditioned descending
+    Chaldean order (diurnal Sun-first, nocturnal Moon-first). The cycle
+    (75y3m per traversal) repeats until accumulated age reaches
+    `max_age_years`. Each period carries 7 sub-periods.
     """
     is_diurnal = bool(getattr(chart, "is_diurnal"))
-    sequence = _DAY_SEQUENCE if is_diurnal else _NIGHT_SEQUENCE
+    sequence = DAY_SEQUENCE if is_diurnal else NIGHT_SEQUENCE
     n = len(sequence)
 
     out: list[DecennialPeriod] = []
     age = 0.0
     cursor = 0
     while age < max_age_years:
-        ruler, years = sequence[cursor % n]
-        end = age + years
-        out.append(DecennialPeriod(ruler=ruler, start_age=age, end_age=end))
+        ruler = sequence[cursor % n]
+        end = age + DECENNIAL_PERIOD_YEARS
+        out.append(
+            DecennialPeriod(
+                ruler=ruler,
+                start_age=age,
+                end_age=end,
+                sub_periods=_build_sub_periods(sequence, cursor % n, age),
+            )
+        )
         age = end
         cursor += 1
     return tuple(out)

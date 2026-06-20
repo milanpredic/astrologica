@@ -1,5 +1,9 @@
-"""Public facade for Decennials (Valens time-lord technique)."""
+"""Public facade for Decennials (Valens decennia time-lord technique)."""
 
-from astrologica._internal.domain.decennials import DecennialPeriod, compute_decennials
+from astrologica._internal.domain.decennials import (
+    DecennialPeriod,
+    DecennialSubPeriod,
+    compute_decennials,
+)
 
-__all__ = ["DecennialPeriod", "compute_decennials"]
+__all__ = ["DecennialPeriod", "DecennialSubPeriod", "compute_decennials"]
