@@ -19,6 +19,7 @@ from astrologica.angle import Degree, Latitude, Longitude, Orb
 from astrologica.antiscion import compute_antiscion, compute_contraantiscion
 from astrologica.aspect import (
     DEFAULT_ORBS,
+    LILLY_ORBS,
     LUMINARY_ORB_BONUS,
     Angle,
     Aspect,
@@ -27,9 +28,26 @@ from astrologica.aspect import (
     compute_aspects,
     default_orb,
     is_in_aversion_to,
+    lilly_moiety_orb,
 )
 from astrologica.chart import Chart, ChartConfig, ChartTradition, compute_natal_chart
 from astrologica.chart_data import Ayanamsa, ChartData, ReferenceFrame
+from astrologica.conditions import (
+    VIA_COMBUSTA_END,
+    VIA_COMBUSTA_START,
+    Besiegement,
+    MoonPhase,
+    MoonQuarter,
+    NextPerfection,
+    VoidOfCourse,
+    chart_besiegement,
+    chart_void_of_course,
+    compute_besiegement,
+    compute_moon_phase,
+    compute_void_of_course,
+    in_via_combusta,
+    moon_phase,
+)
 from astrologica.custom_lot import (
     CardinalAngle,
     CardinalAngleName,
@@ -107,6 +125,12 @@ from astrologica.returns import compute_lunar_return, compute_saturn_return, com
 from astrologica.rise_set import RiseSetTimes, compute_rise_set
 from astrologica.rising_times import compute_rising_times
 from astrologica.secondary_progressions import compute_secondary_progressions
+from astrologica.sect import (
+    PlanetSect,
+    SectStatus,
+    compute_sect_status,
+    compute_sect_statuses,
+)
 from astrologica.sign import Sign
 from astrologica.solar_state import (
     SOLAR_STATE_THRESHOLDS,
@@ -138,6 +162,26 @@ from astrologica.triplicities import (
 from astrologica.zodiacal_releasing import ReleasingPeriod, compute_zodiacal_releasing
 
 __all__ = [
+    "LILLY_ORBS",
+    "lilly_moiety_orb",
+    "VIA_COMBUSTA_START",
+    "VIA_COMBUSTA_END",
+    "in_via_combusta",
+    "MoonPhase",
+    "MoonQuarter",
+    "moon_phase",
+    "compute_moon_phase",
+    "Besiegement",
+    "compute_besiegement",
+    "chart_besiegement",
+    "NextPerfection",
+    "VoidOfCourse",
+    "compute_void_of_course",
+    "chart_void_of_course",
+    "PlanetSect",
+    "SectStatus",
+    "compute_sect_status",
+    "compute_sect_statuses",
     "AlmutenConfig",
     "AlmutenModifiers",
     "AlmutenPoint",

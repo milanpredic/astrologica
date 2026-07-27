@@ -75,6 +75,12 @@ Pair any of them with `compute_almuten_figuris` for the chart's overall
 ruler, or `compute_saturn_return` and `compute_secondary_progressions`
 for life-stage markers.
 
+**Planetary conditions.** `compute_sect_status` (in-sect / halb / hayz),
+`chart_besiegement` (bodily and by-rays malefic enclosure),
+`chart_void_of_course` (perfection-before-sign-exit criterion),
+`compute_moon_phase` (quarters), `in_via_combusta`, plus solar states
+(cazimi / combust / under beams) and orientality on every position.
+
 ### Aspects
 
 Computed automatically inside every `Chart`. To recompute standalone:
@@ -85,6 +91,58 @@ aspects = compute_aspects(chart.planets)
 for a in aspects:
     print(a.first, a.kind, a.second, f"orb={a.orb:.2f}°",
           "applying" if a.applying else "separating")
+```
+
+Orb policies are pluggable. Besides the per-aspect-kind default, the classical
+**Lilly moiety** policy is built in — the orb belongs to the *planets* (sum of
+the two bodies' half-orbs, aspect-kind-independent; CA I p.107/p.127):
+
+```python
+from astrologica import LILLY_ORBS, compute_aspects, lilly_moiety_orb
+
+aspects = compute_aspects(chart.planets, orb_policy=lilly_moiety_orb)
+# LILLY_ORBS: Saturn 10°, Jupiter 12°, Mars 7.5°, Sun 15°, Venus 8°,
+# Mercury 7°, Moon 12.5° — e.g. a Venus–Saturn trine admits (8+10)/2 = 9°.
+```
+
+### Sect — in-sect, halb, hayz
+
+Per-planet sect conditions: sect membership (Mercury by orientality), the
+ecliptic above/below-horizon placement, **halb** (correct sect + hemisphere)
+and **hayz** (halb + planet/sign gender agreement):
+
+```python
+from astrologica import Planet, compute_sect_status
+
+status = compute_sect_status(chart)[Planet.MERCURY]
+print(status.planet_sect, status.in_sect, status.in_halb, status.in_hayz)
+```
+
+### Traditional conditions — via combusta, moon phase, besiegement, void of course
+
+```python
+from astrologica import (
+    Planet,
+    chart_besiegement,
+    chart_void_of_course,
+    compute_moon_phase,
+    in_via_combusta,
+)
+
+in_via_combusta(float(chart.planets[Planet.SUN].longitude))  # 15° Libra – 15° Scorpio
+
+phase = compute_moon_phase(chart)  # quarter (1–4 by elongation) + waxing flag
+
+siege = chart_besiegement(chart, Planet.MOON)
+# .bodily      — nearest bodies on both zodiacal sides are Mars and Saturn
+#                (Lilly CA I p.113), with arcs to each
+# .by_rays     — separating from one malefic, applying to the other
+#                (+ .benefic_intervention when an applying benefic perfects first)
+
+voc = chart_void_of_course(chart)
+# Void when no Ptolemaic aspect PERFECTS before the Moon leaves its sign
+# (perfection criterion; classical static approximation). When not void,
+# .next_perfection carries the planet, aspect angle, and arc to exactness.
 ```
 
 ### Transits — snapshot and range search

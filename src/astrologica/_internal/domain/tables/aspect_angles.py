@@ -36,3 +36,37 @@ def default_orb(kind: AspectKind, a: Planet, b: Planet) -> float:
     base = DEFAULT_ORBS[kind]
     bonus = (LUMINARY_ORB_BONUS.get(a, 0.0) + LUMINARY_ORB_BONUS.get(b, 0.0)) / 2.0
     return base + bonus
+
+
+# Per-planet orbs per Lilly, Christian Astrology I p.107 (the Sun is given as
+# 15° there; some editions and later authors carry 17°). Anchors verified in
+# the worked moiety example CA I p.127: "the Moity of Saturn his Rayes or Orbs
+# is five, and of Venus 4" — Saturn orb 10°, Venus orb 8°. The orb belongs to
+# the PLANETS, not to the aspect kind.
+LILLY_ORBS: Mapping[Planet, float] = {
+    Planet.SATURN: 10.0,
+    Planet.JUPITER: 12.0,
+    Planet.MARS: 7.5,
+    Planet.SUN: 15.0,
+    Planet.VENUS: 8.0,
+    Planet.MERCURY: 7.0,
+    Planet.MOON: 12.5,
+}
+
+
+def lilly_moiety_orb(kind: AspectKind, a: object, b: object) -> float:
+    """Lilly moiety orb policy for `compute_aspects(orb_policy=...)`.
+
+    The allowed orb is the sum of the two bodies' half-orbs (moieties),
+    independent of the aspect kind (CA I p.127). Endpoints without an orb
+    of their own — angles, and bodies outside the Lilly table (outer
+    planets, nodes) — contribute a moiety of 0, so such an aspect admits
+    only the other endpoint's single moiety. Minor aspects (semisextile /
+    quincunx) keep the tight defaults — the moiety doctrine covers
+    Ptolemaic aspects.
+    """
+    if kind in (AspectKind.SEMISEXTILE, AspectKind.QUINCUNX):
+        return DEFAULT_ORBS[kind]
+    moiety_a = LILLY_ORBS.get(a, 0.0) / 2.0 if isinstance(a, Planet) else 0.0
+    moiety_b = LILLY_ORBS.get(b, 0.0) / 2.0 if isinstance(b, Planet) else 0.0
+    return moiety_a + moiety_b

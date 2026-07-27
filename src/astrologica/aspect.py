@@ -10,8 +10,10 @@ from astrologica._internal.domain.aspect import (
 from astrologica._internal.domain.aspect.compute import compute_aspects
 from astrologica._internal.domain.tables.aspect_angles import (
     DEFAULT_ORBS,
+    LILLY_ORBS,
     LUMINARY_ORB_BONUS,
     default_orb,
+    lilly_moiety_orb,
 )
 
 __all__ = [
@@ -20,8 +22,10 @@ __all__ = [
     "AspectEndpoint",
     "AspectKind",
     "DEFAULT_ORBS",
+    "LILLY_ORBS",
     "LUMINARY_ORB_BONUS",
     "compute_aspects",
     "default_orb",
+    "lilly_moiety_orb",
     "is_in_aversion_to",
 ]
